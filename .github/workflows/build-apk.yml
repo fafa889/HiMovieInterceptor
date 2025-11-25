@@ -1,72 +1,23 @@
-name: Build Android APK
-
+name: Build APK
 on:
+  workflow_dispatch:          # 手动触发
   push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:  # 允许手动触发
-
+    branches: [ main ]        # 也可推送即触发
 jobs:
   build:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
       with:
+        distribution: 'zulu'
         java-version: '17'
-        distribution: 'temurin'
-        
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-      
-    - name: Download Gradle Wrapper
-      run: |
-        # 下载完整的 Gradle Wrapper
-        wget https://github.com/gradle/gradle/raw/master/gradlew
-        chmod +x gradlew
-        mkdir -p gradle/wrapper
-        wget -O gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/master/gradle/wrapper/gradle-wrapper.jar
-        wget -O gradle/wrapper/gradle-wrapper.properties https://github.com/gradle/gradle/raw/master/gradle/wrapper/gradle-wrapper.properties
-        
-    - name: Generate signing key
-      run: |
-        keytool -genkeypair -v \
-          -keystore keystore.jks \
-          -keyalg RSA \
-          -keysize 2048 \
-          -validity 10000 \
-          -alias key0 \
-          -storepass android \
-          -keypass android \
-          -dname "CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=Unknown" \
-          -noprompt
-        
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug --no-daemon
-      
-    - name: Build Release APK
-      run: ./gradlew assembleRelease --no-daemon
-      
-    - name: Upload Debug APK
+    - name: Grant exec
+      run: chmod +x gradlew
+    - name: Build debug APK
+      run: ./gradlew assembleDebug --stacktrace
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: himovie-interceptor-debug
-        path: app/build/outputs/apk/debug/app-debug.apk
-        retention-days: 30
-        
-    - name: Upload Release APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: himovie-interceptor-release
-        path: app/build/outputs/apk/release/app-release.apk
-        retention-days: 30
-        
-    - name: Show APK Info
-      run: |
-        echo "=== APK 构建完成 ==="
-        find app/build/outputs/apk/ -name "*.apk" -type f | xargs ls -la
+        name: app-debug
+        path: app/build/outputs/apk/debug/*.apk
