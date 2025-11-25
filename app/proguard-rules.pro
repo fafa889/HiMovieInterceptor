@@ -1,0 +1,3 @@
+-keep class com.example.himovieinterceptor.** { *; }
+-keep class de.robv.android.xposed.** { *; }
+-dontwarn de.robv.android.xposed.**
