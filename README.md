@@ -6,7 +6,7 @@
 
 - 拦截华为视频的用户合约信息请求
 - 修改响应数据，添加VIP特权
-- 支持 OkHttp 和 HttpURLConnection 拦截
+- 支持 OkHttp 拦截
 - 详细的调试日志
 
 ## 使用方法
@@ -18,10 +18,7 @@
 
 ## 构建
 
-本项目使用 GitHub Actions 自动构建 APK。每次推送到 main 分支时会自动生成：
-
-- Debug APK: `app-debug.apk`
-- Release APK: `app-release.apk`
+本项目使用 GitHub Actions 自动构建 APK。每次推送到 main 分支时会自动生成 APK。
 
 在 GitHub 仓库的 Actions 页面可以下载构建好的 APK。
 

@@ -24,7 +24,6 @@ public class HimovieInterceptor implements IXposedHookLoadPackage {
         
         try {
             interceptOkHttp(lpparam);
-            interceptHttpURLConnection(lpparam);
             XposedBridge.log("[HiMovieInterceptor] 所有拦截器初始化完成");
         } catch (Throwable e) {
             XposedBridge.log("[HiMovieInterceptor] 初始化拦截失败: " + e.getMessage());
@@ -53,8 +52,6 @@ public class HimovieInterceptor implements IXposedHookLoadPackage {
                             String originalResponse = (String) XposedHelpers.callMethod(responseBody, "string");
                             
                             XposedBridge.log("[HiMovieInterceptor] 📄 原始响应长度: " + originalResponse.length());
-                            XposedBridge.log("[HiMovieInterceptor] 📝 原始响应预览: " + 
-                                (originalResponse.length() > 200 ? originalResponse.substring(0, 200) + "..." : originalResponse));
                             
                             String modifiedResponse = modifyUserContracts(originalResponse);
                             
@@ -89,32 +86,6 @@ public class HimovieInterceptor implements IXposedHookLoadPackage {
         }
     }
     
-    private void interceptHttpURLConnection(XC_LoadPackage.LoadPackageParam lpparam) {
-        try {
-            XposedHelpers.findAndHookMethod("java.net.HttpURLConnection", lpparam.classLoader, 
-                "getInputStream", new XC_MethodHook() {
-                @Override
-                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                    try {
-                        Object connection = param.thisObject;
-                        String url = XposedHelpers.callMethod(connection, "getURL").toString();
-                        
-                        if (url.contains(TARGET_API)) {
-                            XposedBridge.log("[HiMovieInterceptor] 🌐 拦截到HttpURLConnection请求: " + url);
-                        }
-                    } catch (Throwable t) {
-                        // 忽略错误
-                    }
-                }
-            });
-            
-            XposedBridge.log("[HiMovieInterceptor] ✅ HttpURLConnection拦截器初始化成功");
-            
-        } catch (Throwable t) {
-            XposedBridge.log("[HiMovieInterceptor] ❌ HttpURLConnection拦截初始化失败: " + t.getMessage());
-        }
-    }
-    
     private String modifyUserContracts(String originalResponse) {
         try {
             JsonObject jsonObject = JsonParser.parseString(originalResponse).getAsJsonObject();
@@ -131,12 +102,9 @@ public class HimovieInterceptor implements IXposedHookLoadPackage {
                     contracts.addProperty("vip_level", 6);
                     contracts.addProperty("vip_expire", "2099-12-31");
                     contracts.addProperty("is_premium", true);
-                    contracts.addProperty("max_quality", "8K");
-                    contracts.addProperty("simultaneous_devices", 5);
                 }
                 
                 data.addProperty("modified_by", "HiMovieInterceptor");
-                data.addProperty("injection_time", System.currentTimeMillis());
             }
             
             String result = gson.toJson(jsonObject);
@@ -145,12 +113,7 @@ public class HimovieInterceptor implements IXposedHookLoadPackage {
             
         } catch (Exception e) {
             XposedBridge.log("[HiMovieInterceptor] ❌ 修改响应失败: " + e.getMessage());
-            
-            JsonObject errorObj = new JsonObject();
-            errorObj.addProperty("error", "拦截器处理失败");
-            errorObj.addProperty("original_data_length", originalResponse.length());
-            errorObj.addProperty("interceptor_error", e.getMessage());
-            return gson.toJson(errorObj);
+            return originalResponse;
         }
     }
 }
